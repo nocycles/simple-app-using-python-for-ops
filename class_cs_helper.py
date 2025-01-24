@@ -1,6 +1,8 @@
 #Importing important module
 from pymongo import MongoClient
+import pymongo
 import os
+from tabulate import tabulate
 
 #Connection to Database
 file = open("D:\Raymond\Raymond's Work\python_trial\code_python\pass_mongo.txt",'r')
@@ -10,7 +12,6 @@ collection = db.tbl_m_request_elektronik
 collection_2 = db.tbl_m_member
 collection_3 = db.tbl_m_store
 collection_4 = db.tbl_m_submit_loan
-
 
 def status_pengajuan() :
     user_input = input("Input Mobile Phone / NIK: ")
@@ -150,9 +151,15 @@ def status_pengajuan() :
         print("No document found with the given 'Mobile Phone / NIK' value.")
     
     #Back to the first menu        
-    print("Press Any Key To Back into First Menu")
-    input()
-    os.system('cls')
+    while True:
+        confirmation = input("\nDo you want to stay in this menu or back to first menu? <y/n>: ")
+        if confirmation == "Y" or confirmation == "y":
+            return status_pengajuan()
+        elif confirmation == "N" or confirmation == "n":
+            os.system('cls')
+            break
+        else:
+            print("Didn't match the required value")
 
 def dana_instant():
     user_input = input("Input Mobile Phone: ")
@@ -178,6 +185,7 @@ def dana_instant():
             order_id = document["order_id"]
             order_type = document["type"]
             created = document["created_at"]
+            similarity = document["name_similarity"]
             
         # Print the results
             msg=("Data has been retrieved from the MongoDB, check the result below for Dana Instant")
@@ -193,6 +201,7 @@ def dana_instant():
             print("Nama Rekening    :", nama_rek)
             print("Order ID         :", order_id)
             print("Order Type       :", order_type)
+            print("Name Similarity  :", similarity)
             print("="*len(msg))
             print("")
             coun = coun + 1
@@ -200,9 +209,15 @@ def dana_instant():
         print("No document found with the given 'Mobile Phone' value.")
     
     #Back to the first menu        
-    print("Press Any Key To Back into First Menu")
-    input()
-    os.system('cls')
+    while True:
+        confirmation = input("\nDo you want to stay in this menu or back to first menu? <y/n>: ")
+        if confirmation == "Y" or confirmation == "y":
+            return dana_instant()
+        elif confirmation == "N" or confirmation == "n":
+            os.system('cls')
+            break
+        else:
+            print("Didn't match the required value")
 
 def pengajuan_motor():
     user_input = input("Input Mobile Phone: ")
@@ -228,6 +243,7 @@ def pengajuan_motor():
             order_id = document["order_id"]
             order_type = document["type"]
             created = document["created_at"]
+            similarity = document["name_similarity"]
             
         # Print the results
             msg=("Data has been retrieved from the MongoDB, check the result below for Dana Instant")
@@ -243,6 +259,7 @@ def pengajuan_motor():
             print("Nama Rekening    :", nama_rek)
             print("Order ID         :", order_id)
             print("Order Type       :", order_type)
+            print("Name Similarity  :", similarity)
             print("="*len(msg))
             print("")
             coun = coun + 1
@@ -250,15 +267,95 @@ def pengajuan_motor():
         print("No document found with the given 'Mobile Phone' value.")
     
     #Back to the first menu        
-    print("Press Any Key To Back into First Menu")
-    input()
-    os.system('cls')
+    while True:
+        confirmation = input("\nDo you want to stay in this menu or back to first menu? <y/n>: ")
+        if confirmation == "Y" or confirmation == "y":
+            return pengajuan_motor()
+        elif confirmation == "N" or confirmation == "n":
+            os.system('cls')
+            break
+        else:
+            print("Didn't match the required value")
 
 def member_check():
-    print("Soon to be updated on the next version!")
-    print("Press Any Key To Back into First Menu")
-    input()
-    os.system('cls')    
+    msg = "Please refer to this format of phone number 08xxxx"
+    print(msg)
+    print("-"*len(msg))
+    user_input = input("Input Mobile Phone: ")
+
+    pipeline = [               
+            {
+                '$lookup': {
+                    'from': 'tbl_device_info',
+                    'localField': 'deviceid',
+                    'foreignField': 'device_id',
+                    'as': 'joined_data'
+                }
+            },
+            {
+                '$match': {
+                    'mobile_phone': user_input[1:]
+                }
+            }
+        ]
+    
+    documents = collection_2.aggregate(pipeline)
+
+    if documents:
+        for document in documents:
+            created_at = document["created_at"]
+            try:
+                ktp_date = document["ktp_verify_date"]
+            except KeyError:
+                ktp_date = "Belum Melakukan Proses Verifikasi KTP"
+            name = document["name"]
+            email = document["email"]
+            mobile_phone = document["mobile_phone"]
+            try:
+                nik = document["nik"]
+            except KeyError:
+                nik = "N/A Belum Proses Verifikasi KTP"
+            #try:
+            #    device_model = document["joined_data"][0]["device_desc"]
+            #except KeyError:
+            #    device_model = "N/A Tidak diketahui jenis device"    
+            try: 
+                re_verified = str(document["is_re_verified"])
+            except KeyError:
+                re_verified = "True"
+            if re_verified == "True":
+                result_re_verified = "Sudah Melakukan Verifikasi Ulang"
+            else:
+                result_re_verified = "Belum Melakukan Verifikasi Ulang"
+            code = str(document["code"])
+            if code == "None":
+                result_code = "Sudah Input Kode OTP"
+            else:
+                result_code = "Belum Input Kode OTP"
+            
+            print("-"*len(msg))
+            print("Nama User                :", name.title())
+            print("No. Handphone            :", mobile_phone)
+            print("Email                    :", email.lower())
+            print("Tanggal Regist           :", created_at)
+            print("NIK                      :", nik)
+            print("Tanggal Verifikasi KTP   :", ktp_date)
+            print("Status Verifikasi Ulang  :", result_re_verified)
+            print("Status OTP               :", result_code)
+            #print("Model Handphone          :", device_model)
+    else:
+        print("No accounts have been found from the Mobile Phone given")
+
+    #Back to the first menu    
+    while True:
+        confirmation = input("\nDo you want to stay in this menu or back to first menu? <y/n>: ")
+        if confirmation == "Y" or confirmation == "y":
+            return member_check()
+        elif confirmation == "N" or confirmation == "n":
+            os.system('cls')
+            break
+        else:
+            print("Didn't match the required value") 
 
 def cek_pending():
     
@@ -294,6 +391,150 @@ def cek_pending():
     msg3 = "There are no pending case at your desired date"
     print("-"*len(msg3))
     print(msg3)
-    print("\nPress Any Key To Back into First Menu")
-    input()
-    os.system('cls')
+    while True:
+        confirmation = input("\nDo you want to stay in this menu or back to first menu? <y/n>: ")
+        if confirmation == "Y" or confirmation == "y":
+            return cek_pending()
+        elif confirmation == "N" or confirmation == "n":
+            os.system('cls')
+            break
+        else:
+            print("Didn't match the required value")
+
+def refcode_cs():
+    msg = "Select profile in here"
+    print(msg)
+    print("-"*len(msg))
+    msg_rizky = "[1] Rizky Indah"
+    msg_yuni = "[2] Jessica"
+    msg_lidya = "[3] Angel"
+    print(msg_rizky)
+    print(msg_yuni)
+    print(msg_lidya)
+    print("-"*len(msg_lidya))
+    user = str(input("Select between 1, 2, and 3: "))
+    cs_1 = "^rzk"
+    cs_2 = "^jsc"
+    cs_3 = "^agl"
+    if user == "1":
+        query = {
+            'kode_referral': {
+                '$regex': cs_1,
+                '$options': 'i'
+            }
+        }
+        documents_1 = collection.find(query).sort([("created_at",pymongo.DESCENDING)])
+
+        # Extract and format specific fields from the documents for distinct 'nik' values
+        formatted_documents = []
+        for document in documents_1:
+            formatted_document = [document.get("created_at", ""), 
+                                    document.get("nik", ""),
+                                    document.get("nama_pemohon", "").title(), 
+                                    document.get("kode_referral", "").upper(),                               
+                                    document.get("isdn", "")[2:],
+                                    document.get("kote").title(),
+                                    document.get("alamat_domisili")
+                                    ]
+            formatted_documents.append(formatted_document)
+
+        # Check if any documents were found
+        if not formatted_documents:
+            print("No documents found.")
+        else:
+            # Flag the first few documents
+            flagged_documents = formatted_documents
+            
+            # Display the flagged documents in a table
+            headers = ["Date", "NIK", "Nama Konsumen", "Kode_Referral", "Phone Number","Kota", "Alamat Domisili" ]
+            print(tabulate(flagged_documents, headers=headers, tablefmt="simple"))
+
+        # Display the count of distinct 'nik' values found
+        count = len(formatted_documents)
+        print(f"Total applications found by Referral Code: {count}")
+
+    elif user == "2":
+        query = {
+            'kode_referral': {
+                '$regex': cs_2,
+                '$options': 'i'
+            }
+        }
+        documents_2 = collection.find(query).sort([("created_at",pymongo.DESCENDING)])
+
+        # Extract and format specific fields from the documents for distinct 'nik' values
+        formatted_documents = []
+        for document in documents_2:
+            formatted_document = [document.get("created_at", ""), 
+                                    document.get("nik", ""),
+                                    document.get("nama_pemohon", "").title(), 
+                                    document.get("kode_referral", "").upper(),                               
+                                    document.get("isdn", "")[2:],
+                                    document.get("kote").title(),
+                                    document.get("alamat_domisili")
+                                    ]
+            formatted_documents.append(formatted_document)
+
+        # Check if any documents were found
+        if not formatted_documents:
+            print("No documents found.")
+        else:
+            # Flag the first few documents
+            flagged_documents = formatted_documents
+            
+            # Display the flagged documents in a table
+            headers = ["Date", "NIK", "Nama Konsumen", "Kode_Referral", "Phone Number","Kota", "Alamat Domisili" ]
+            print(tabulate(flagged_documents, headers=headers, tablefmt="simple"))
+
+        # Display the count of distinct 'nik' values found
+        count = len(formatted_documents)
+        print(f"Total applications found by Referral Code: {count}")
+
+    elif user == "3":
+        query = {
+            'kode_referral': {
+                '$regex': cs_3,
+                '$options': 'i'
+            }
+        }
+        documents_3 = collection.find(query).sort([("created_at",pymongo.DESCENDING)])
+
+        # Extract and format specific fields from the documents for distinct 'nik' values
+        formatted_documents = []
+        for document in documents_3:
+            formatted_document = [document.get("created_at", ""), 
+                                    document.get("nik", ""),
+                                    document.get("nama_pemohon", "").title(), 
+                                    document.get("kode_referral", "").upper(),                               
+                                    document.get("isdn", "")[2:],
+                                    document.get("kote").title(),
+                                    document.get("alamat_domisili")
+                                    ]
+            formatted_documents.append(formatted_document)
+
+        # Check if any documents were found
+        if not formatted_documents:
+            print("No documents found.")
+        else:
+            # Flag the first few documents
+            flagged_documents = formatted_documents
+            
+            # Display the flagged documents in a table
+            headers = ["Date", "NIK", "Nama Konsumen", "Kode_Referral", "Phone Number","Kota", "Alamat Domisili" ]
+            print(tabulate(flagged_documents, headers=headers, tablefmt="simple"))
+
+        # Display the count of distinct 'nik' values found
+        count = len(formatted_documents)
+        print(f"Total applications found by Referral Code: {count}")
+    else:
+        "Didn't match the required value"
+        return refcode_cs()
+    while True:
+        confirmation = input("\nDo you want to stay in this menu or back to first menu? <y/n>: ")
+        if confirmation == "Y" or confirmation == "y":
+            return refcode_cs()
+        elif confirmation == "N" or confirmation == "n":
+            os.system('cls')
+            break
+        else:
+            print("Didn't match the required value")
